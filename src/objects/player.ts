@@ -6,6 +6,8 @@ export class Player {
     maxHealth = 6;
     health;
 
+    speed = 100;
+
     constructor(scene, x, y) {
         this.scene = scene;
         this.weapon = new Weapon(this);
@@ -30,13 +32,12 @@ export class Player {
             .sprite(x, y, "hero")
             .setSize(16, 16)
             .setOffset(0, 16)
-            .setCollideWorldBounds(true);
+            // .setCollideWorldBounds(true);
     }
 
     update() {
         this.sprite.setVelocity(0);
-        const sprite = this.sprite;
-        const velocity = 50;
+        const velocity = this.speed;
 
         if (this.cursors.left.isDown) {
             this.sprite.setVelocityX(-velocity);
@@ -60,7 +61,7 @@ export class Player {
             this.weapon.swing();
         }
 
-        if (sprite.body.velocity.x !== 0 || sprite.body.velocity.y !== 0) {
+        if (this.sprite.body.velocity.x !== 0 || this.sprite.body.velocity.y !== 0) {
             this.sprite.anims.play('hero_run', true);
         } 
         else {

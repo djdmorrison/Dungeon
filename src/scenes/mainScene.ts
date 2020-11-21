@@ -10,13 +10,15 @@ var groundLayer, coinLayer;
 var text;
 var jumping = false;
 
+import Dungeon from "@mikewesthad/dungeon";
+
 import { Player } from '../objects/player';
 import { Demon } from '../objects/demon';
 import { Heart } from '../objects/heart';
 
 export class MainScene extends Phaser.Scene {
     private player: Player;
-    private demon: Demon;
+    private demons: Demon[];
     private heart: Heart;
 
     private score = {
@@ -31,7 +33,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload(): void {
-        this.load.image("tiles", 'assets/tiles.png');
+        this.load.image("tiles", 'assets/map-tiles.png');
         this.load.tilemapTiledJSON("map", 'assets/map.json');
 
         this.load.spritesheet('hero', 'assets/hero.png',
@@ -52,11 +54,133 @@ export class MainScene extends Phaser.Scene {
     }
 
     create(): void {
-        const map = this.make.tilemap({ key: "map", tileWidth: 16, tileHeight: 16 });
-        const tileset = map.addTilesetImage("spritesheet", "tiles");
-        const groundLayer = map.createStaticLayer("floor", tileset, 0, 0);
-        const wallLayer = map.createStaticLayer("wall", tileset, 0, 0);
-        const aboveLayer = map.createStaticLayer("above", tileset, 0, 0);
+        this.demons = [];
+
+        const dungeon = new Dungeon({
+            width: 50,
+            height: 50,
+            doorPadding: 2,
+            rooms: {
+                width: {
+                    min: 7,
+                    max: 15,
+                    onlyOdd: true
+                },
+                height: {
+                    min: 7,
+                    max: 15,
+                    onlyOdd: true
+                }
+            }
+        });
+
+        dungeon.drawToConsole({
+            empty: " ",
+            emptyColor: "rgb(0, 0, 0)",
+            wall: "#",
+            wallColor: "rgb(255, 0, 0)",
+            floor: "0",
+            floorColor: "rgb(210, 210, 210)",
+            door: "x",
+            doorColor: "rgb(0, 0, 255)",
+            fontSize: "8px"
+          });
+
+        const map = this.make.tilemap({
+            tileWidth: 16,
+            tileHeight: 16,
+            width: dungeon.width,
+            height: dungeon.height 
+        });
+
+        const tileset = map.addTilesetImage("spritesheet", "tiles", 16, 16, 0, 0);
+
+        const groundLayer: Phaser.Tilemaps.DynamicTilemapLayer = map.createBlankDynamicLayer("floor", tileset);
+        const wallLayer = map.createBlankDynamicLayer("wall", tileset);
+        const aboveLayer = map.createBlankDynamicLayer("above", tileset);
+
+        console.log(dungeon.rooms);
+
+        dungeon.rooms.forEach((room, index) => {
+            const { x, y, width, height, left, right, top, bottom } = room;
+
+            groundLayer.weightedRandomize(x + 1, y + 1, width - 2, height - 2, [
+                { index: 29, weight: 9 }, // 9/10 times, use index 6
+                { index: [30, 31], weight: 1 } // 1/10 times, randomly pick 7, 8 or 26
+            ]);
+
+            wallLayer.putTileAt(49, left, top);
+            wallLayer.putTileAt(50, right, top);
+            wallLayer.putTileAt(64, right, bottom);
+            wallLayer.putTileAt(63, left, bottom);
+
+            // Place the non-corner wall tiles using fill with x, y, width, height parameters
+            wallLayer.fill(9, left + 1, top + 1, width - 2, 1); // Top
+            wallLayer.fill(9, left + 1, bottom, width - 2, 1); // Bottom
+            wallLayer.fill(56, left, top + 1, 1, height - 2); // Left
+            wallLayer.fill(57, right, top + 1, 1, height - 2); // Right
+
+            aboveLayer.fill(2, left + 1, top, width - 2, 1); // Top
+            aboveLayer.fill(2, left + 1, bottom - 1, width - 2, 1); // Bottom
+
+            const doors = room.getDoorLocations();
+
+            for (var i = 0; i < doors.length; i++) {
+                if (doors[i].y === 0) { // top
+
+                    groundLayer.putTilesAt([29], x + doors[i].x - 1, y + doors[i].y);
+
+                    if (doors[i].x == 2) {
+                        wallLayer.putTilesAt([56, -1, 61], x + doors[i].x - 2, y + doors[i].y);
+                    }
+                    else {
+                        wallLayer.putTilesAt([60, -1, 61], x + doors[i].x - 2, y + doors[i].y);
+                    }
+
+                    wallLayer.putTilesAt([-1], x + doors[i].x - 1, y + doors[i].y + 1);
+    
+                    aboveLayer.removeTileAt(x + doors[i].x - 2, y + doors[i].y);
+                    aboveLayer.removeTileAt(x + doors[i].x - 1, y + doors[i].y);
+                    aboveLayer.removeTileAt(x + doors[i].x, y + doors[i].y);
+
+                } else if (doors[i].y === room.height - 1) { // bottom
+                    groundLayer.putTilesAt([29], x + doors[i].x - 1, y + doors[i].y);
+
+                    if (doors[i].x == 2) {
+                        wallLayer.putTilesAt([56, -1, 68], x + doors[i].x - 2, y + doors[i].y);
+                        aboveLayer.putTilesAt([-1, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
+                    }
+                    else {
+                        wallLayer.putTilesAt([67, -1, 68], x + doors[i].x - 2, y + doors[i].y);
+                        aboveLayer.putTilesAt([52, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
+                    }
+                } else if (doors[i].x === 0) { // left
+                    groundLayer.putTilesAt([29], x + doors[i].x, y + doors[i].y);
+                    wallLayer.putTilesAt([[9], [-1], [67]], x + doors[i].x, y + doors[i].y - 1);
+
+                    if (doors[i].y == 2) {
+                        aboveLayer.putTilesAt([[2], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                    else {
+                        aboveLayer.putTilesAt([[60], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                } else if (doors[i].x === room.width - 1) { // right
+                    groundLayer.putTilesAt([29], x + doors[i].x, y + doors[i].y);
+                    wallLayer.putTilesAt([[9], [-1], [68]], x + doors[i].x, y + doors[i].y - 1);
+
+                    if (doors[i].y == 2) {
+                        aboveLayer.putTilesAt([[2], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                    else {
+                        aboveLayer.putTilesAt([[61], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                }
+            }
+
+            // this.add.text(room.centerX * 16, room.centerY * 16, `Room ${index}`, {
+            //     fontSize: '10px',
+            // });
+        });
 
         wallLayer.setCollisionByExclusion([-1]);
         aboveLayer.setDepth(10);
@@ -69,27 +193,44 @@ export class MainScene extends Phaser.Scene {
         // });
  
         // set the boundaries of our game world
-        this.physics.world.bounds.width = groundLayer.width;
-        this.physics.world.bounds.height = groundLayer.height;
+        // this.physics.world.bounds.width = groundLayer.width;
+        // this.physics.world.bounds.height = groundLayer.height;
 
-        // set bounds so the camera won't go outside the game world
-        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+        const firstRoom = dungeon.rooms[0];
+        console.log(map);
 
-        // set background color, so the sky is not black    
-        this.cameras.main.setBackgroundColor('#000'); 
-
-        // create the this.player sprite    
-        this.player = new Player(this, 168, ((groundLayer.height - 32) / 2));
+        // create the this.player sprite
+        this.player = new Player(this, map.widthInPixels / 2, map.heightInPixels / 2);
         this.physics.add.collider(this.player.sprite, wallLayer);
 
-        this.demon = new Demon(this, 218, ((groundLayer.height - 16) / 2));
+        const randomRooms = new Set();
+        while (randomRooms.size !== 5) {
+            randomRooms.add(Math.floor(Math.random() * (dungeon.rooms.length - 1)) + 1)
+        }
+
+        console.log(randomRooms);
+
+        for (const index of Array.from(randomRooms)) {
+            const room = dungeon.rooms[index];
+
+            const demon = new Demon(this, room.centerX * 16 + 10, room.centerY * 16 + 8);
+
+            this.demons.push(demon);
+
+            this.physics.add.overlap(this.player.weapon.sprite, demon.sprite, this.demonDie, null, this);
+            this.physics.add.overlap(this.player.sprite, demon.sprite, this.playerDamaged, null, this);
+        }
 
         this.heart = new Heart(this);
         this.heart.addHeart();
         this.heart.addHeart();
 
-        this.physics.add.overlap(this.player.weapon.sprite, this.demon.sprite, this.demonDie, null, this);
-        this.physics.add.overlap(this.player.sprite, this.demon.sprite, this.playerDamaged, null, this);
+        // set bounds so the camera won't go outside the game world
+        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+        this.cameras.main.startFollow(this.player.sprite);
+
+        // set background color, so the sky is not black    
+        this.cameras.main.setBackgroundColor('#000'); 
 
         this.cameras.main.once('camerafadeoutcomplete', () => {
             this.scene.restart();
@@ -98,7 +239,7 @@ export class MainScene extends Phaser.Scene {
 
         this.add.text(138, 0, `Kills: ${this.score.kills} Deaths: ${this.score.deaths}`, {
             fontSize: '10px'
-        });
+        }).setScrollFactor(0);
 
         this.cameras.main.fadeIn(500);
     }
@@ -107,10 +248,12 @@ export class MainScene extends Phaser.Scene {
         if (this.player.sprite.active) {
             this.player.update();
         }
-        
-        if (this.demon.sprite.active) {
-            this.demon.update();
-        }
+
+        this.demons.forEach(demon => {
+            if (demon.sprite.active) {
+                demon.update();
+            }
+        })
     }
 
     finish(): void {
@@ -120,7 +263,12 @@ export class MainScene extends Phaser.Scene {
     demonDie(weapon, demon) {
         this.score.kills++;
         demon.destroy();
-        this.finish();
+
+        this.demons.splice(this.demons.findIndex(d => d.sprite === demon), 1)
+
+        if (!this.demons.length) {
+            this.finish();
+        }
     }
 
     playerDamaged(player, demon) {

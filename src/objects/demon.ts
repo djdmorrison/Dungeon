@@ -1,11 +1,10 @@
 import { Player } from './player';
 
 export class Demon {
-    scene; sprite; hit; hitOverlap;
+    scene; sprite;
 
     constructor(scene, x, y) {
         this.scene = scene;
-        this.hit = false;
 
         const anims = scene.anims;
 
@@ -24,25 +23,23 @@ export class Demon {
         this.sprite = scene.physics.add
             .sprite(x, y, "demon")
             .setSize(16, 16)
-            .setCollideWorldBounds(true);
+            // .setCollideWorldBounds(true);
 
         this.sprite.flipX = true;
     }
 
     update () {
+        const velocity = 20;
+
+        this.sprite.flipX = !(this.sprite.body.velocity.x > 0);
+
         if (this.sprite.body.velocity.x !== 0 || this.sprite.body.velocity.y !== 0) {
             this.sprite.anims.play('demon_run', true);
         } 
         else {
             this.sprite.anims.play("demon_idle", true);
         }
-    }
 
-    overlap () {
-        // this.scene.physics.removeCollider(this.hitOverlap);
-
-        console.log(this.sprite.destroy());
-
-        console.log('OVERLAP');
+        this.sprite.body.velocity.normalize().scale(velocity);
     }
 }

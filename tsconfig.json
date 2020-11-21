@@ -1,6 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "module": "CommonJs"
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "target": "es5",
   }
 }
