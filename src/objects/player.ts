@@ -6,7 +6,7 @@ export class Player {
     maxHealth = 6;
     health;
 
-    speed = 200;
+    speed = 100;
 
     constructor(scene, x, y) {
         this.scene = scene;

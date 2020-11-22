@@ -197,7 +197,7 @@ export class MainScene extends Phaser.Scene {
             });
         });
 
-        // wallLayer.setCollisionByExclusion([-1]);
+        wallLayer.setCollisionByExclusion([-1]);
         aboveLayer.setDepth(10);
 
         // const debugGraphics = this.add.graphics().setAlpha(0.75);
