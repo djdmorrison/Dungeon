@@ -125,64 +125,79 @@ export class MainScene extends Phaser.Scene {
 
             const doors = room.getDoorLocations();
 
+            console.log(doors);
+
             for (var i = 0; i < doors.length; i++) {
                 if (doors[i].y === 0) { // top
 
-                    groundLayer.putTilesAt([29], x + doors[i].x - 1, y + doors[i].y);
+                    groundLayer.putTilesAt([29, 29], x + doors[i].x - 1, y + doors[i].y);
 
                     if (doors[i].x == 2) {
-                        wallLayer.putTilesAt([56, -1, 61], x + doors[i].x - 2, y + doors[i].y);
+                        wallLayer.putTilesAt([56, -1, -1, 61], x + doors[i].x - 2, y + doors[i].y);
                     }
                     else {
-                        wallLayer.putTilesAt([60, -1, 61], x + doors[i].x - 2, y + doors[i].y);
+                        wallLayer.putTilesAt([60, -1, -1, 61], x + doors[i].x - 2, y + doors[i].y);
                     }
 
-                    wallLayer.putTilesAt([-1], x + doors[i].x - 1, y + doors[i].y + 1);
+                    wallLayer.putTilesAt([-1, -1], x + doors[i].x - 1, y + doors[i].y + 1);
     
                     aboveLayer.removeTileAt(x + doors[i].x - 2, y + doors[i].y);
                     aboveLayer.removeTileAt(x + doors[i].x - 1, y + doors[i].y);
                     aboveLayer.removeTileAt(x + doors[i].x, y + doors[i].y);
+                    aboveLayer.removeTileAt(x + doors[i].x + 1, y + doors[i].y);
 
                 } else if (doors[i].y === room.height - 1) { // bottom
-                    groundLayer.putTilesAt([29], x + doors[i].x - 1, y + doors[i].y);
+                    groundLayer.putTilesAt([29, 29], x + doors[i].x - 1, y + doors[i].y);
 
                     if (doors[i].x == 2) {
-                        wallLayer.putTilesAt([56, -1, 68], x + doors[i].x - 2, y + doors[i].y);
-                        aboveLayer.putTilesAt([-1, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
+                        wallLayer.putTilesAt([56, -1, -1, 68], x + doors[i].x - 2, y + doors[i].y);
+                        aboveLayer.putTilesAt([-1, -1, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
                     }
                     else {
-                        wallLayer.putTilesAt([67, -1, 68], x + doors[i].x - 2, y + doors[i].y);
-                        aboveLayer.putTilesAt([52, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
+                        wallLayer.putTilesAt([67, -1, -1, 68], x + doors[i].x - 2, y + doors[i].y);
+                        aboveLayer.putTilesAt([52, -1, -1, 51], x + doors[i].x - 2, y + doors[i].y -1);
                     }
                 } else if (doors[i].x === 0) { // left
-                    groundLayer.putTilesAt([29], x + doors[i].x, y + doors[i].y);
-                    wallLayer.putTilesAt([[9], [-1], [67]], x + doors[i].x, y + doors[i].y - 1);
+                    groundLayer.putTilesAt([[29], [29]], x + doors[i].x, y + doors[i].y);
 
-                    if (doors[i].y == 2) {
-                        aboveLayer.putTilesAt([[2], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
+                    if (doors[i].y == height - 3) {
+                        wallLayer.putTilesAt([[9], [-1], [-1], [9]], x + doors[i].x, y + doors[i].y - 1);
                     }
                     else {
-                        aboveLayer.putTilesAt([[60], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
+                        wallLayer.putTilesAt([[9], [-1], [-1], [67]], x + doors[i].x, y + doors[i].y - 1);
+                    }
+
+                    if (doors[i].y == 2) {
+                        aboveLayer.putTilesAt([[2], [-1], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                    else {
+                        aboveLayer.putTilesAt([[60], [-1], [-1], [52]], x + doors[i].x, y + doors[i].y - 2);
                     }
                 } else if (doors[i].x === room.width - 1) { // right
-                    groundLayer.putTilesAt([29], x + doors[i].x, y + doors[i].y);
-                    wallLayer.putTilesAt([[9], [-1], [68]], x + doors[i].x, y + doors[i].y - 1);
+                    groundLayer.putTilesAt([[29], [29]], x + doors[i].x, y + doors[i].y);
 
-                    if (doors[i].y == 2) {
-                        aboveLayer.putTilesAt([[2], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
+                    if (doors[i].y == height - 3) {
+                        wallLayer.putTilesAt([[9], [-1], [-1], [9]], x + doors[i].x, y + doors[i].y - 1);
                     }
                     else {
-                        aboveLayer.putTilesAt([[61], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
+                        wallLayer.putTilesAt([[9], [-1], [-1], [68]], x + doors[i].x, y + doors[i].y - 1);
+                    }
+
+                    if (doors[i].y == 2) {
+                        aboveLayer.putTilesAt([[2], [-1], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
+                    }
+                    else {
+                        aboveLayer.putTilesAt([[61], [-1], [-1], [51]], x + doors[i].x, y + doors[i].y - 2);
                     }
                 }
             }
 
-            // this.add.text(room.centerX * 16, room.centerY * 16, `Room ${index}`, {
-            //     fontSize: '10px',
-            // });
+            this.add.text(room.centerX * 16, room.centerY * 16, `Room ${index}`, {
+                fontSize: '10px',
+            });
         });
 
-        wallLayer.setCollisionByExclusion([-1]);
+        // wallLayer.setCollisionByExclusion([-1]);
         aboveLayer.setDepth(10);
 
         // const debugGraphics = this.add.graphics().setAlpha(0.75);
