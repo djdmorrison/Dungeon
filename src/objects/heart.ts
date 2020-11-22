@@ -9,7 +9,7 @@ export class Heart {
 
     addHeart() {
         this.numHearts++;
-        this.sprites.push(this.scene.physics.add.sprite(32 + (this.numHearts * 16), 32, "heart").setOrigin(0, 0).setScrollFactor(0));
+        this.sprites.push(this.scene.physics.add.sprite(32 + (this.numHearts * 16), 32, "heart").setOrigin(0, 0).setScrollFactor(0).setDepth(100));
     }
 
     updateHearts(currentHealth) {

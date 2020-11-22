@@ -26,8 +26,17 @@ body div.container div#game {
     margin-right: auto
 }
 
-.changelog {
+.changelog ul {
     color: white;
+    width: fit-content;
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.changelog p {
+    margin: 20px 0 10px;
 }
 
 ul {

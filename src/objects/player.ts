@@ -31,8 +31,7 @@ export class Player {
         this.sprite = scene.physics.add
             .sprite(x, y, "hero")
             .setSize(16, 16)
-            .setOffset(0, 16)
-            // .setCollideWorldBounds(true);
+            .setOffset(0, 16);
     }
 
     update() {

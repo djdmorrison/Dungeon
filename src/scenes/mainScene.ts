@@ -21,6 +21,8 @@ export class MainScene extends Phaser.Scene {
     private demons: Demon[];
     private heart: Heart;
 
+    killsDeathsText;
+
     private score = {
         kills: 0,
         deaths: 0
@@ -192,9 +194,9 @@ export class MainScene extends Phaser.Scene {
                 }
             }
 
-            this.add.text(room.centerX * 16, room.centerY * 16, `Room ${index}`, {
-                fontSize: '10px',
-            });
+            // this.add.text(room.centerX * 16, room.centerY * 16, `Room ${index}`, {
+            //     fontSize: '10px',
+            // });
         });
 
         wallLayer.setCollisionByExclusion([-1]);
@@ -219,7 +221,8 @@ export class MainScene extends Phaser.Scene {
         this.physics.add.collider(this.player.sprite, wallLayer);
 
         const randomRooms = new Set();
-        while (randomRooms.size !== 5) {
+        const numDemons = 5;
+        while (randomRooms.size !== numDemons) {
             randomRooms.add(Math.floor(Math.random() * (dungeon.rooms.length - 1)) + 1)
         }
 
@@ -228,7 +231,7 @@ export class MainScene extends Phaser.Scene {
         for (const index of Array.from(randomRooms)) {
             const room = dungeon.rooms[index];
 
-            const demon = new Demon(this, room.centerX * 16 + 10, room.centerY * 16 + 8);
+            const demon = new Demon(this, room);
 
             this.demons.push(demon);
 
@@ -252,9 +255,9 @@ export class MainScene extends Phaser.Scene {
             this.cameras.main.fadeIn(500);
         })
 
-        this.add.text(138, 0, `Kills: ${this.score.kills} Deaths: ${this.score.deaths}`, {
+        this.killsDeathsText = this.add.text(138, 0, `Kills: ${this.score.kills} Deaths: ${this.score.deaths}`, {
             fontSize: '10px'
-        }).setScrollFactor(0);
+        }).setScrollFactor(0).setDepth(100);
 
         this.cameras.main.fadeIn(500);
     }
@@ -269,6 +272,8 @@ export class MainScene extends Phaser.Scene {
                 demon.update();
             }
         })
+
+        this.killsDeathsText.setText(`Kills: ${this.score.kills} Deaths: ${this.score.deaths}`);
     }
 
     finish(): void {
