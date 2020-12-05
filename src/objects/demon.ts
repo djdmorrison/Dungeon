@@ -1,5 +1,6 @@
 import { Player } from './player';
 import { Room } from "@mikewesthad/dungeon";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Position {
     x: number;
@@ -8,10 +9,11 @@ interface Position {
 }
 
 export class Demon {
-    scene; sprite; room; idle;
+    scene; sprite; room; idle; 
     
     nextPosition: Position;
     speed = 30;
+    id = uuidv4();
 
     constructor(scene, room: Room) {
         this.scene = scene;
@@ -108,6 +110,15 @@ export class Demon {
 
             this.idle = false;
         }.bind(this), Math.random() * 1000);
+    }
+
+    jumpBack() {
+        this.sprite.setX(this.sprite.x - 15);
+
+        this.sprite.setTint(0xff0000);
+        setTimeout(() => {
+            this.sprite.setTint(0xffffff);
+        }, 100);
     }
 }
 

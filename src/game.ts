@@ -9,10 +9,7 @@ const config: GameConfig = {
     parent: "game",
     scene: MainScene,
     physics: {
-        default: "arcade",
-        arcade: {
-            gravity: { y: 0 }
-        }
+        default: "arcade"
     },
     pixelArt: true,
     antialias: false

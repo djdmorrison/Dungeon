@@ -1,12 +1,13 @@
 import { Weapon } from './weapon';
 
 export class Player {
-    scene; jumping; sprite; input; cursors; weapon; flipped; 
+    scene; jumping; sprite; input; cursors; weapon; flipped; bouncing; 
     
     maxHealth = 6;
     health;
 
-    speed = 100;
+    speed = 200;
+    immune = false;
 
     constructor(scene, x, y) {
         this.scene = scene;
@@ -35,30 +36,40 @@ export class Player {
     }
 
     update() {
-        this.sprite.setVelocity(0);
-        const velocity = this.speed;
+        if (!this.bouncing) {
+            if (this.cursors.left.isDown) {
+                this.sprite.setVelocityX(-this.speed);
+                this.sprite.flipX = true;
+                this.flipped = true;
+            }
+            else if (this.cursors.right.isDown) {
+                this.sprite.setVelocityX(this.speed);
+                this.sprite.flipX = false;
+                this.flipped = false;
+            }
 
-        if (this.cursors.left.isDown) {
-            this.sprite.setVelocityX(-velocity);
-            this.sprite.flipX = true;
-            this.flipped = true;
-        }
-        else if (this.cursors.right.isDown) {
-            this.sprite.setVelocityX(velocity);
-            this.sprite.flipX = false;
-            this.flipped = false;
-        }
+            if (this.cursors.up.isDown) {
+                this.sprite.setVelocityY(-this.speed);
+            }
+            else if (this.cursors.down.isDown) {
+                this.sprite.setVelocityY(this.speed);
+            }
 
-        if (this.cursors.up.isDown) {
-            this.sprite.setVelocityY(-velocity);
-        }
-        else if (this.cursors.down.isDown) {
-            this.sprite.setVelocityY(velocity);
+            if (!this.cursors.left.isDown && !this.cursors.right.isDown) {
+                this.sprite.setVelocityX(0);
+
+            }
+
+            if (!this.cursors.up.isDown && !this.cursors.down.isDown) {
+                this.sprite.setVelocityY(0);
+            }
         }
 
         if (this.cursors.space.isDown) {
             this.weapon.swing();
         }
+
+        this.sprite.body.velocity.normalize().scale(this.speed);
 
         if (this.sprite.body.velocity.x !== 0 || this.sprite.body.velocity.y !== 0) {
             this.sprite.anims.play('hero_run', true);
@@ -67,17 +78,16 @@ export class Player {
             this.sprite.anims.play("hero_idle", true);
         }
 
-        this.sprite.body.velocity.normalize().scale(velocity);
-
         this.weapon.update();
     }
 
     jumpBack() {
-        this.sprite.setX(this.sprite.x - 15);
+        this.bouncing = true;
 
         this.sprite.setTint(0xff0000);
         setTimeout(() => {
             this.sprite.setTint(0xffffff);
+            this.bouncing = false;
         }, 100);
     }
 
