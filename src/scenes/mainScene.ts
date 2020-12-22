@@ -1,7 +1,10 @@
 import Dungeon from "@mikewesthad/dungeon";
+import { Mrpas } from 'mrpas'
+
 
 import { DungeonGenerator, Layers } from './dungeonGenerator';
-import TilemapVisibility from "./tileMapVisibility";
+// import TilemapVisibility from "./tileMapVisibility";
+
 
 import { Player } from '../objects/player';
 import { Demon } from '../objects/demon';
@@ -9,13 +12,20 @@ import { Heart } from '../objects/heart';
 
 
 export class MainScene extends Phaser.Scene {
+
+    private debug: boolean = false;
+
     private player: Player;
     private demons: Demon[];
     private heart: Heart;
     private dungeon: Dungeon;
-    private map: Phaser.Tilemaps.Tilemap;
-    private layers: Layers;
-    private tilemapVisibility: TilemapVisibility;
+    public map: Phaser.Tilemaps.Tilemap;
+    public layers: Layers;
+    // private tilemapVisibility: TilemapVisibility;
+
+    private vistedTiles: Set<Phaser.Tilemaps.Tile> = new Set();
+
+    private fov: Mrpas;
 
     killsDeathsText;
 
@@ -29,8 +39,17 @@ export class MainScene extends Phaser.Scene {
             key: "MainScene"
         });
     }
+    
+
+    init(): void {
+
+        
+        // this.game.debug.inputInfo(32, 32);
+    }
 
     preload(): void {
+        this.input.keyboard.on('keydown-' + 'D', function (event) { this.debug = !this.debug; });
+
         this.load.image("tiles", 'assets/map-tiles-extruded.png');
         this.load.tilemapTiledJSON("map", 'assets/map.json');
 
@@ -61,7 +80,21 @@ export class MainScene extends Phaser.Scene {
         this.layers = layers;
         this.map = map;
 
-        this.tilemapVisibility = new TilemapVisibility(layers.shadowLayer);
+        // this.tilemapVisibility = new TilemapVisibility(layers.shadowLayer);
+
+        this.fov = new Mrpas(this.map.width, this.map.height, (x, y) => {
+            const tile = this.layers.groundLayer.getTileAt(x, y)
+            
+            if (tile) {
+                return tile && !tile.collides
+            }
+
+            const wallTile = this.layers.groundLayer.getTileAt(x, y)
+
+            return wallTile && !wallTile.collides;
+        })
+        
+        console.log(this.fov);
         
         this.createPlayer();
         this.createDemons();
@@ -97,6 +130,12 @@ export class MainScene extends Phaser.Scene {
     }
 
     update(): void {
+        this.computeFOV();
+
+        // console.log(this.game.config.physics.arcade.debug);
+        this.game.config.physics.arcade.debug = false;
+
+        // this.game.debug;
         if (this.player.sprite.active) {
             this.player.update();
         }
@@ -107,7 +146,7 @@ export class MainScene extends Phaser.Scene {
         const playerTileY = this.layers.groundLayer.worldToTileY(this.player.sprite.y);
         const playerRoom = this.dungeon.getRoomAt(playerTileX, playerTileY);
         
-        this.tilemapVisibility.setActiveRoom(playerRoom);
+        // this.tilemapVisibility.setActiveRoom(playerRoom);
 
         this.demons.forEach(demon => {
             if (demon.sprite.active) {
@@ -122,6 +161,108 @@ export class MainScene extends Phaser.Scene {
         this.cameras.main.fadeOut(500);
     }
 
+    computeFOV(){
+        if (!this.fov || !this.map || !this.layers.groundLayer || !this.player)
+        {
+            return
+        }
+
+        // get camera view bounds
+        const camera = this.cameras.main
+        const bounds = new Phaser.Geom.Rectangle(
+            this.map.worldToTileX(camera.worldView.x) - 1,
+            this.map.worldToTileY(camera.worldView.y) - 1,
+            this.map.worldToTileX(camera.worldView.width) + 2,
+            this.map.worldToTileX(camera.worldView.height) + 3
+        )
+
+        // set all tiles within camera view to invisible
+        for (let y = bounds.y; y < bounds.y + bounds.height; y++)
+        {
+            for (let x = bounds.x; x < bounds.x + bounds.width; x++)
+            {
+                if (y < 0 || y >= this.map.height || x < 0 || x >= this.map.width)
+                {
+                    continue
+                }
+
+                const tile = this.layers.groundLayer.getTileAt(x, y)
+                const wallTile = this.layers.wallLayer.getTileAt(x, y)
+                const aboveTile = this.layers.aboveLayer.getTileAt(x, y)
+                if (!tile && !wallTile && !aboveTile)
+                {
+                    continue
+                }
+
+                if (tile) {
+                    tile.alpha = this.vistedTiles.has(tile) ? 1 : 0;
+                    tile.tint = Phaser.Display.Color.GetColor(64, 64, 64)
+                }
+                if (wallTile) {
+                    wallTile.alpha = this.vistedTiles.has(wallTile) ? 1 : 0;
+                    wallTile.tint = Phaser.Display.Color.GetColor(64, 64, 64)
+                }
+                if (aboveTile) {
+                    aboveTile.alpha = this.vistedTiles.has(aboveTile) ? 1 : 0;
+                    aboveTile.tint = Phaser.Display.Color.GetColor(64, 64, 64)
+                }
+            }
+        }
+
+        // get player's position
+        const px = this.map.worldToTileX(this.player.sprite.x)
+        const py = this.map.worldToTileY(this.player.sprite.y)
+        
+        // compute fov from player's position
+        this.fov.compute(
+            px,
+            py,
+            7,
+            (x, y) => {
+                const tile = this.layers.groundLayer.getTileAt(x, y)
+                const wallTile = this.layers.wallLayer.getTileAt(x, y)
+                const aboveTile = this.layers.aboveLayer.getTileAt(x, y)
+
+                if (!tile && !wallTile && !aboveTile) {
+                    return false
+                }
+
+                return (tile && tile.tint === 0xffffff) || (wallTile && wallTile.tint === 0xffffff) || (aboveTile && aboveTile.tint === 0xffffff)
+            },
+            (x, y) => {
+                const tile = this.layers.groundLayer.getTileAt(x, y)
+                const wallTile = this.layers.wallLayer.getTileAt(x, y)
+                const aboveTile = this.layers.aboveLayer.getTileAt(x, y - 1)
+
+                if (!tile && !wallTile && !aboveTile) {
+                    return false
+                }
+
+                const d = Phaser.Math.Distance.Between(py, px, y, x)
+                const alpha = Math.min(2 - d / 4, 1)
+
+                if (tile) {
+                    tile.tint = 0xffffff
+                    tile.alpha =  alpha
+
+                    this.vistedTiles.add(tile);
+                }
+                if (wallTile) { 
+                    wallTile.tint = 0xffffff
+                    wallTile.alpha =  alpha
+
+                    this.vistedTiles.add(wallTile);
+                }
+                if (aboveTile) { 
+                    aboveTile.tint = 0xffffff
+                    aboveTile.alpha =  alpha
+
+                    this.vistedTiles.add(aboveTile);
+                }
+            }
+        )
+    }
+
     createPlayer() {
         this.player = new Player(this, this.map.widthInPixels / 2, this.map.heightInPixels / 2);
         this.physics.add.collider(this.player.sprite, this.layers.wallLayer);
@@ -130,7 +271,6 @@ export class MainScene extends Phaser.Scene {
     createDemons() {
         const randomRooms = new Set();
         const numDemons = Math.ceil(this.dungeon.rooms.length / 4);
-        console.log(numDemons);
 
         while (randomRooms.size !== numDemons) {
             randomRooms.add(Math.floor(Math.random() * (this.dungeon.rooms.length - 1)) + 1)
@@ -165,12 +305,12 @@ export class MainScene extends Phaser.Scene {
             this.cameras.main.fadeIn(500);
         })
     }
-
-    generateDungeonRooms() {
-        
-    }
     
     demonDie(weapon, demon) {
+        if (!weapon.visible) {
+            return;
+        }
+
         this.score.kills++;
         demon.body.enable = false;
         demon.setFrame(1)
@@ -188,22 +328,12 @@ export class MainScene extends Phaser.Scene {
     }
 
     playerDamaged(player, demon) {
-        const xDiff = player.x - demon.x;
-        const yDiff = player.y - demon.y;
-        const maxDiff = 5;
+        const dx = player.x - demon.x;
+        const dy = player.y - demon.y;
 
-        if (xDiff < -maxDiff) {
-            player.setVelocityX(-this.player.speed);
-        }
-        if (xDiff > maxDiff) {
-            player.setVelocityX(this.player.speed);
-        }
-        if (yDiff > maxDiff) {
-            player.setVelocityY(this.player.speed);
-        }
-        if (yDiff < -maxDiff) {
-            player.setVelocityY(-this.player.speed);
-        }
+        const dir = new Phaser.Math.Vector2(dx, dy).normalize().scale(20);
+
+        player.setVelocity(dir.x, dir.y);
 
         if (!this.player.immune) {
             this.player.immune = true;

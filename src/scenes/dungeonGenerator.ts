@@ -141,12 +141,17 @@ export class DungeonGenerator {
                 }
             }
 
-            // TODO: Don't overlap doors
             if (Math.random() > 0.5) {
                 if (width > 3) {                    
-                    layers.wallLayer.weightedRandomize(x + Math.floor(width / 2), top + 1, 1, 1, [
-                        { index: [15, 16, 22, 23], weight: 2.5 }
-                    ])
+                    const topDoor = doors.find(door => {
+                        return door.y === 0;
+                    })
+
+                    if ((topDoor && !this.checkObstruction(topDoor.x, x + Math.floor(width / 2))) || !topDoor) {
+                        layers.wallLayer.weightedRandomize(x + Math.floor(width / 2), top + 1, 1, 1, [
+                            { index: [15, 16, 22, 23], weight: 2.5 }
+                        ])
+                    }
                 }
             }
 
@@ -155,7 +160,7 @@ export class DungeonGenerator {
             // });
         });
 
-        layers.shadowLayer.fill(0);
+        // layers.shadowLayer.fill(0);
 
         layers.aboveLayer.setDepth(10);
         layers.shadowLayer.setDepth(99);
@@ -163,5 +168,9 @@ export class DungeonGenerator {
         return {
             dungeon, layers, map
         }
+    }
+
+    checkObstruction(source, target) {
+        return source !== target;
     }
 }

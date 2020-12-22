@@ -1,12 +1,13 @@
 import { Player } from './player';
 
 export class Weapon {
-    player; sprite; swinging; initialRotation; rotation; 
+    player; swinging; initialRotation; rotation; 
+    sprite: Phaser.GameObjects.Sprite;
 
     constructor(player) {
         this.player = player;
         this.sprite = this.player.scene.physics.add.sprite(0, 0, "sword")
-            .setSize(32, 16)
+            .setSize(16, 16)
             .setVisible(false)
             .setOrigin(0.5, 1)
             .setDepth(20);

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@mikewesthad/dungeon": "^2.0.1",
+    "mrpas": "^2.0.0",
     "phaser": "3.24.0",
     "uuid": "^8.3.1"
   },

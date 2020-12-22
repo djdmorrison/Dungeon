@@ -6,7 +6,7 @@ export class Player {
     maxHealth = 6;
     health;
 
-    speed = 200;
+    speed = 150;
     immune = false;
 
     constructor(scene, x, y) {
@@ -33,6 +33,9 @@ export class Player {
             .sprite(x, y, "hero")
             .setSize(16, 16)
             .setOffset(0, 16);
+
+        this.sprite.body.debugShowVelocity = true;
+        this.sprite.body.debugShowBody = true;
     }
 
     update() {

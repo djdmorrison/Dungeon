@@ -1,6 +1,7 @@
 import { Player } from './player';
 import { Room } from "@mikewesthad/dungeon";
 import { v4 as uuidv4 } from 'uuid';
+import { MainScene } from '../scenes/mainScene';
 
 interface Position {
     x: number;
@@ -9,7 +10,9 @@ interface Position {
 }
 
 export class Demon {
-    scene; sprite; room; idle; 
+    scene: MainScene;
+    sprite; room; idle; 
+    
     
     nextPosition: Position;
     speed = 30;
@@ -89,6 +92,17 @@ export class Demon {
         }
 
         this.sprite.body.velocity.normalize().scale(this.speed);
+
+        // get the tile the sprite is currently on, determine whether it's visible to the player or not, and match 
+        const tile = this.scene.layers.groundLayer.getTileAt(this.scene.map.worldToTileX(this.sprite.x), this.scene.map.worldToTileY(this.sprite.y));        
+
+        if (tile.tint === 16777215) {
+            this.sprite.visible = true;
+            this.sprite.alpha = tile.alpha;
+        }
+        else {
+            this.sprite.visible = false;
+        }
     }
 
     setNextPosition() {
